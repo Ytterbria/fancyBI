@@ -10,11 +10,11 @@ use fish;
 
 create table if not exists chart
 (
-     id         bigint auto_increment  comment '图标id' primary key,
+     id         bigint auto_increment  comment '图表id' primary key,
      goal        text null comment '分析目标' ,
-     chartData   text null comment '图标数据',
-     chartType   varchar(256) null comment '图标类型',
-     genChart    text null comment 'AI生成的图标',
+     chartData   text null comment '图表数据',
+     chartType   varchar(256) null comment '图表类型',
+     genChart    text null comment 'AI生成的图表',
      genResult   text null comment 'AI生成的分析结果',
      createTime  datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
      updateTime  datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',

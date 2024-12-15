@@ -17,7 +17,7 @@ import lombok.Data;
 @Data
 public class Chart implements Serializable {
     /**
-     * 图标id
+     * 图表id
      */
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -28,22 +28,27 @@ public class Chart implements Serializable {
     private Long userId;
 
     /**
+     * 图表名称
+     */
+    private String chartName;
+    
+    /**
      * 分析目标
      */
     private String goal;
 
     /**
-     * 图标数据
+     * 图表数据
      */
     private String chartData;
 
     /**
-     * 图标类型
+     * 图表类型
      */
     private String chartType;
 
     /**
-     * AI生成的图标
+     * AI生成的图表
      */
     private String genChart;
 

@@ -20,21 +20,28 @@ import java.util.List;
 public class ChartQueryRequest extends PageRequest implements Serializable {
 
     /**
-     * 图标id
+     * 图表id
      */
     private Long id;
+
 
     /**
      *  用户id
      */
     private Long userId;
+
+    /**
+     * 图表名称
+     */
+    private String chartName;
+
     /**
      * 分析目标
      */
     private String goal;
 
     /**
-     * 图标类型
+     * 图表类型
      */
     private String chartType;
 

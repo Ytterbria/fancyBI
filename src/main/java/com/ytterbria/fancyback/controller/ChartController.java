@@ -8,34 +8,36 @@ import com.ytterbria.fancyback.common.BaseResponse;
 import com.ytterbria.fancyback.common.DeleteRequest;
 import com.ytterbria.fancyback.common.ErrorCode;
 import com.ytterbria.fancyback.common.ResultUtils;
+import com.ytterbria.fancyback.constant.FileConstant;
 import com.ytterbria.fancyback.constant.UserConstant;
 import com.ytterbria.fancyback.exception.BusinessException;
 import com.ytterbria.fancyback.exception.ThrowUtils;
-import com.ytterbria.fancyback.model.dto.chart.ChartAddRequest;
-import com.ytterbria.fancyback.model.dto.chart.ChartEditRequest;
-import com.ytterbria.fancyback.model.dto.chart.ChartQueryRequest;
-import com.ytterbria.fancyback.model.dto.chart.ChartUpdateRequest;
+import com.ytterbria.fancyback.model.dto.chart.*;
+import com.ytterbria.fancyback.model.dto.file.UploadFileRequest;
 import com.ytterbria.fancyback.model.entity.Chart;
 import com.ytterbria.fancyback.model.entity.User;
+import com.ytterbria.fancyback.model.enums.FileUploadBizEnum;
 import com.ytterbria.fancyback.service.ChartService;
 import com.ytterbria.fancyback.service.UserService;
+
+import java.io.File;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+
+import com.ytterbria.fancyback.utils.ExcelUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
- * 帖子接口
+ *  智能图表
  *
- * @author <a href="https://github.com/liytterbria">程序员鱼皮</a>
- * @from <a href="https://ytterbria.icu">编程导航知识星球</a>
+ * @author ytterbria
+ *
  */
 @RestController
 @RequestMapping("/chart")
@@ -73,6 +75,54 @@ public class ChartController {
         long newChartId = chart.getId();
         return ResultUtils.success(newChartId);
     }
+
+    /**
+     * 智能分析
+     *
+     * @param multipartFile
+     * @param generateChartByAIRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/generate")
+    public BaseResponse<String> generateChartByAI(@RequestPart("file") MultipartFile multipartFile,
+                                                  GenerateChartByAIRequest generateChartByAIRequest, HttpServletRequest request) {
+
+        String chartName = generateChartByAIRequest.getChartName();
+        String chartType = generateChartByAIRequest.getChartType();
+        String goal = generateChartByAIRequest.getGoal();
+
+        ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, goal不能为空");
+        ThrowUtils.throwIf(StringUtils.isNotBlank(chartName) && (chartName.length() > 100) , ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, chartName长度不能超过100");
+
+        String res =  ExcelUtils.ExcelToCsv(multipartFile);
+        return ResultUtils.success(res);
+
+//        User loginUser = userService.getLoginUser(request);
+//        // 文件目录：根据业务、用户来划分
+//        String uuid = RandomStringUtils.randomAlphanumeric(8);
+//        String filename = uuid + "-" + multipartFile.getOriginalFilename();
+////        String filepath = String.format("/%s/%s/%s", fileUploadBizEnum.getValue(), loginUser.getId(), filename);
+//        File file = null;
+//        try {
+//
+//
+//            // 返回可访问地址
+//            return ResultUtils.success("");
+//        } catch (Exception e) {
+////            log.error("file upload error, filepath = " + filepath, e);
+//            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
+//        } finally {
+//            if (file != null) {
+//                // 删除临时文件
+//                boolean delete = file.delete();
+//                if (!delete) {
+////                    log.error("file delete error, filepath = {}", filepath);
+//                }
+//            }
+//        }
+    }
+
 
     /**
      * 删除
@@ -253,12 +303,14 @@ public class ChartController {
         }
         Long id = chartQueryRequest.getId();
         Long userId = chartQueryRequest.getUserId();
+        String chartName = chartQueryRequest.getChartName();
         String goal = chartQueryRequest.getGoal();
         String chartType = chartQueryRequest.getChartType();
         String sortField = chartQueryRequest.getSortField();
         String sortOrder = chartQueryRequest.getSortOrder();
 
         queryWrapper.eq(id != null && id > 0,"id",id);
+        queryWrapper.like(StringUtils.isNotBlank(chartName),"chartName",chartName);
         queryWrapper.eq(StringUtils.isNotBlank(goal),"goal",goal);
         queryWrapper.eq(StringUtils.isNotBlank(chartType),"chart_type",chartType);
         queryWrapper.eq(userId != null && userId > 0,"user_id",userId);
