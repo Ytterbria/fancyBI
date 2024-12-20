@@ -82,8 +82,10 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.ytterbria.fancyback.controller
+          -
 # yupi-sdk 配置
 yuapi:
   client:
     secret-key: v2ibs7lx12fjdsmfym8i96gvx28df17z
     access-key: m4o0p91b38gxfvf5vzez3ijt42l4ngvy
+

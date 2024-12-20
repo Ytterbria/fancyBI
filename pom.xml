@@ -118,6 +118,13 @@
             <artifactId>yucongming-java-sdk</artifactId>
             <version>0.0.4</version>
         </dependency>
+        <!--修改version为最新稳定版-->
+
+        <dependency>
+            <groupId>io.github.briqt</groupId>
+            <artifactId>xunfei-spark4j</artifactId>
+            <version>1.3.0</version>
+        </dependency>
     </dependencies>
 
     <build>

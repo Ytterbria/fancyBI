@@ -5,12 +5,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest
-class AIManagerTest {
+class YupiAIManagerTest {
    @Resource
-    private AIManager aiManager;
+    private YupiAIManager yupiAiManager;
    @Test
     void doChat(){
    }
