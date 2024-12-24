@@ -23,6 +23,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import com.ytterbria.fancyback.utils.ExcelUtils;
+import com.ytterbria.fancyback.utils.FileVertifyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -170,14 +171,17 @@ public class ChartController {
         User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, goal不能为空");
         ThrowUtils.throwIf(StringUtils.isNotBlank(chartName) && (chartName.length() > 100) , ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, chartName长度不能超过100");
+        // 校验文件安全性
+        ThrowUtils.throwIf(FileVertifyUtils.isFileValid(multipartFile), ErrorCode.PARAMS_ERROR, "文件不安全");
+
         final String prompt = "你是一个前端开发专家和数据分析师,接下来我会按照以下固定格式给你提供内容:\n"
                 + "分析需求: \n"
                 + "{数据分析的需求或者目标}\n"
                 + "原始数据: \n"
                 + "{csv格式的原始数据}\n"
-                + "请根据分析需求和原始数据的输入,按照以下指定的格式生成内容(此外不要有任何多余的开头,结尾,注释等):\n"
+                + "请根据分析需求和原始数据的输入,按照以下指定的格式生成内容,根据'------'分割,给出两段内容,内容中要有'------',以便我处理(此外不要有任何多余的开头,结尾,注释等):\n"
                 + "------\n"
-                + "{前端 Echarts V5 的 option 配置对象的json代码(不包含(option=,只需要option={}里面的内容,),合理地将数据可视化,不要生成任何多余的内容,只需要代码即可,生成的图表要美观,华丽,互动性强}\n"
+                + "{前端 Echarts V5 的 option 配置对象的json代码,不需要配置option对象的title,并且,必须要确保仅靠给出的代码就能成功渲染出图表(此外不要有任何多余的开头,结尾,注释等),合理地将数据可视化,不要生成任何多余的内容,只需要代码即可,生成的图表要美观,华丽,炫酷,表现力强,互动性强}\n"
                 + "------\n"
                 + "{明确的数据分析结论,200字以上}\n";
         StringBuilder userInput = new StringBuilder();
@@ -202,6 +206,17 @@ public class ChartController {
         FancyResponse fancyResponse = new FancyResponse();
         fancyResponse.setGeneratedChart(generatedChart);
         fancyResponse.setGeneratedResult(generatedResult);
+
+        Chart chart = new Chart();
+        chart.setUserId(loginUser.getId());
+        chart.setChartName(chartName);
+        chart.setGoal(goal);
+        chart.setChartData(ExcelUtils.ExcelToCsv(multipartFile));
+        chart.setChartType(chartType);
+        chart.setGenChart(generatedChart);
+        chart.setGenResult(generatedResult);
+        boolean saveResult = chartService.save(chart);
+        ThrowUtils.throwIf(!saveResult,ErrorCode.SYSTEM_ERROR,"图表保存失败");
         return ResultUtils.success(fancyResponse);
     }
 
@@ -330,24 +345,6 @@ public class ChartController {
         return ResultUtils.success(chartPage);
     }
 
-    // endregion
-
-//    /**
-//     * 分页搜索（从 ES 查询，封装类）
-//     *
-//     * @param chartQueryRequest
-//     * @param request
-//     * @return
-//     */
-//    @PostMapping("/search/page/vo")
-//    public BaseResponse<Page<Chart>> searchChartVOByPage(@RequestBody ChartQueryRequest chartQueryRequest,
-//                                                         HttpServletRequest request) {
-//        long size = chartQueryRequest.getPageSize();
-//        // 限制爬虫
-//        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-//        Page<Chart> chartPage = chartService.searchFromEs(chartQueryRequest);
-//        return ResultUtils.success(chartPage);
-//    }
 
     /**
      * 编辑（用户）

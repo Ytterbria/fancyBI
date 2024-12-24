@@ -6,11 +6,8 @@ import com.alibaba.excel.support.ExcelTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,13 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ExcelUtils {
     public static String ExcelToCsv(MultipartFile multipartFile) {
-//        File file = null;
-//        try{
-//             file = ResourceUtils.getFile("classpath:test_excel.xlsx");
-//        } catch (FileNotFoundException e){
-//            e.printStackTrace();
-//        }
-        // 读取Excel文件
+
         List<Map<Integer,String>> list = null;
         try {
             list = EasyExcel.read(multipartFile.getInputStream())
@@ -35,7 +26,7 @@ public class ExcelUtils {
                     .headRowNumber(0)
                     .doReadSync();
         } catch (IOException e) {
-            log.error("exce了转化csv失败,表格处理错误", e);
+            log.error("excel转化csv失败,表格处理错误", e);
         }
         if (CollUtil.isEmpty(list)) return "";
 
@@ -54,7 +45,4 @@ public class ExcelUtils {
         return stringBuilder.toString();
     }
 
-    public static void main(String[] args) {
-        ExcelToCsv(null);
-    }
 }
