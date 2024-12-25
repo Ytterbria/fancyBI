@@ -11,7 +11,6 @@ public class RedisConfig {
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        // 配置 Redis 连接工厂，假设 Redis 运行在默认的 127.0.0.1:6379
         return new LettuceConnectionFactory("localhost", 6379);
     }
 

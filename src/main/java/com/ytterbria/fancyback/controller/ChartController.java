@@ -10,6 +10,7 @@ import com.ytterbria.fancyback.common.ResultUtils;
 import com.ytterbria.fancyback.constant.UserConstant;
 import com.ytterbria.fancyback.exception.BusinessException;
 import com.ytterbria.fancyback.exception.ThrowUtils;
+import com.ytterbria.fancyback.manager.RedissonLimiterManager;
 import com.ytterbria.fancyback.manager.SparkAIManager;
 import com.ytterbria.fancyback.manager.YupiAIManager;
 import com.ytterbria.fancyback.model.dto.chart.*;
@@ -53,6 +54,9 @@ public class ChartController {
     @Resource
     private SparkAIManager sparkAIManager;
 
+    @Resource
+    private RedissonLimiterManager redissonLimiterManager;
+
     // region 增删改查
 
     /**
@@ -79,82 +83,83 @@ public class ChartController {
         return ResultUtils.success(newChartId);
     }
 
-//    /**
-//     * 智能分析
-//     *
-//     * @param generateChartByAIRequest
-//     * @param request
-//     * @return BaseResponse<String>
-//     */
-//    @PostMapping("/generate")
-//    public BaseResponse<FancyResponse> generateChartByAI(@RequestPart("file") MultipartFile multipartFile,
-//                                                  GenerateChartByAIRequest generateChartByAIRequest, HttpServletRequest request) {
-//
-//        String chartName = generateChartByAIRequest.getChartName();
-//        String chartType = generateChartByAIRequest.getChartType();
-//        String goal = generateChartByAIRequest.getGoal();
-//        User loginUser = userService.getLoginUser(request);
-//        ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, goal不能为空");
-//        ThrowUtils.throwIf(StringUtils.isNotBlank(chartName) && (chartName.length() > 100) , ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, chartName长度不能超过100");
-//        final String prompt = "你是一个前端开发专家和数据分析师,接下来我会按照以下固定格式给你提供内容:\n"
-//                + "分析需求: \n"
-//                + "{数据分析的需求或者目标}\n"
-//                + "原始数据: \n"
-//                + "{csv格式的原始数据}\n"
-//                + "请根据分析需求和原始数据的输入,按照以下指定的格式生成内容(此外不要有任何多余的开头,结尾,注释等):\n"
-//                + "这是一个愚蠢的分割标记\n"
-//                + "{前端 Echarts V5 的 option 配置对象js代码,合理的将数据可视化,不要生成任何多余的内容,只需要代码即可,生成的图表要美观,华丽}\n"
-//                + "这是一个愚蠢的分割标记\n"
-//                + "{明确的数据分析结论,200字以上}\n";
-//
-//
-//        StringBuilder userInput = new StringBuilder();
-//        //用户预设
-//        userInput.append(prompt);
-//
-//        //message输入
-//        userInput.append("分析需求: ")
-//                .append("\n")
-//                .append(goal).append("\n");
-//        if (StringUtils.isNotBlank(chartType)){
-//            userInput.append("生成的图表类型为: ").append(chartType).append("\n");
-//        }
-//        String deposedData =  ExcelUtils.ExcelToCsv(multipartFile);
-//
-//        userInput.append("原始数据: ").append("\n");
-//        userInput.append(deposedData).append("\n");
-//
-//        long modelId = 1651468516836098050L;
-//
-//        String result = fancyManager.doChat(modelId,userInput.toString());
-//
-//        String[] splits = result.split("这是一个愚蠢的分割标记");
-//
-//        if (splits.length < 3){
-//            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"AI生成失败");
-//        }
-//        String generatedChart = splits[1];
-//        String generatedResult = splits[2];
-//
-//
-//        FancyResponse fancyResponse = new FancyResponse();
-//
-//        fancyResponse.setGeneratedChart(generatedChart);
-//        fancyResponse.setGeneratedResult(generatedResult);
-//
-//        Chart chart = new Chart();
-//        chart.setUserId(loginUser.getId());
-//        chart.setChartName(chartName);
-//        chart.setGoal(goal);
-//        chart.setChartData(deposedData);
-//        chart.setChartType(chartType);
-//        chart.setGenChart(generatedChart);
-//        chart.setGenResult(generatedResult);
-//        boolean saveResult = chartService.save(chart);
-//        ThrowUtils.throwIf(!saveResult,ErrorCode.SYSTEM_ERROR,"图表保存失败");
-//        return ResultUtils.success(fancyResponse);
-//
-//    }
+    /**
+     * 智能分析
+     *
+     * @param generateChartByAIRequest
+     * @param request
+     * @return BaseResponse<String>
+     */
+    @Deprecated
+    @PostMapping("/generate")
+    public BaseResponse<FancyResponse> generateChartByAI(@RequestPart("file") MultipartFile multipartFile,
+                                                  GenerateChartByAIRequest generateChartByAIRequest, HttpServletRequest request) {
+
+        String chartName = generateChartByAIRequest.getChartName();
+        String chartType = generateChartByAIRequest.getChartType();
+        String goal = generateChartByAIRequest.getGoal();
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(StringUtils.isBlank(goal), ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, goal不能为空");
+        ThrowUtils.throwIf(StringUtils.isNotBlank(chartName) && (chartName.length() > 100) , ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, chartName长度不能超过100");
+        final String prompt = "你是一个前端开发专家和数据分析师,接下来我会按照以下固定格式给你提供内容:\n"
+                + "分析需求: \n"
+                + "{数据分析的需求或者目标}\n"
+                + "原始数据: \n"
+                + "{csv格式的原始数据}\n"
+                + "请根据分析需求和原始数据的输入,按照以下指定的格式生成内容(此外不要有任何多余的开头,结尾,注释等):\n"
+                + "这是一个愚蠢的分割标记\n"
+                + "{前端 Echarts V5 的 option 配置对象js代码,合理的将数据可视化,不要生成任何多余的内容,只需要代码即可,生成的图表要美观,华丽}\n"
+                + "这是一个愚蠢的分割标记\n"
+                + "{明确的数据分析结论,200字以上}\n";
+
+
+        StringBuilder userInput = new StringBuilder();
+        //用户预设
+        userInput.append(prompt);
+
+        //message输入
+        userInput.append("分析需求: ")
+                .append("\n")
+                .append(goal).append("\n");
+        if (StringUtils.isNotBlank(chartType)){
+            userInput.append("生成的图表类型为: ").append(chartType).append("\n");
+        }
+        String deposedData =  ExcelUtils.ExcelToCsv(multipartFile);
+
+        userInput.append("原始数据: ").append("\n");
+        userInput.append(deposedData).append("\n");
+
+        long modelId = 1651468516836098050L;
+
+        String result = fancyManager.doChat(modelId,userInput.toString());
+
+        String[] splits = result.split("这是一个愚蠢的分割标记");
+
+        if (splits.length < 3){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"AI生成失败");
+        }
+        String generatedChart = splits[1];
+        String generatedResult = splits[2];
+
+
+        FancyResponse fancyResponse = new FancyResponse();
+
+        fancyResponse.setGeneratedChart(generatedChart);
+        fancyResponse.setGeneratedResult(generatedResult);
+
+        Chart chart = new Chart();
+        chart.setUserId(loginUser.getId());
+        chart.setChartName(chartName);
+        chart.setGoal(goal);
+        chart.setChartData(deposedData);
+        chart.setChartType(chartType);
+        chart.setGenChart(generatedChart);
+        chart.setGenResult(generatedResult);
+        boolean saveResult = chartService.save(chart);
+        ThrowUtils.throwIf(!saveResult,ErrorCode.SYSTEM_ERROR,"图表保存失败");
+        return ResultUtils.success(fancyResponse);
+
+    }
 
     /**
      * 调用星火的AI接口
@@ -173,6 +178,8 @@ public class ChartController {
         ThrowUtils.throwIf(StringUtils.isNotBlank(chartName) && (chartName.length() > 100) , ErrorCode.PARAMS_ERROR, "调用AI接口请求参数错误, chartName长度不能超过100");
         // 校验文件安全性
         ThrowUtils.throwIf(FileVertifyUtils.isFileValid(multipartFile), ErrorCode.PARAMS_ERROR, "文件不安全");
+        //限流
+        ThrowUtils.throwIf(!redissonLimiterManager.acquire(loginUser.getId().toString(),1,1),ErrorCode.TOO_MANY_REQUESTS_ERROR,"请求次数过多,请稍后再试");
 
         final String prompt = "你是一个前端开发专家和数据分析师,接下来我会按照以下固定格式给你提供内容:\n"
                 + "分析需求: \n"
