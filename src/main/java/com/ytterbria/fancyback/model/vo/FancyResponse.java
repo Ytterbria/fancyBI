@@ -11,5 +11,7 @@ public class FancyResponse implements Serializable {
 
     private String generatedResult;
 
+    private Long id;
+
     private static final long serialVersionUID = 1L;
 }

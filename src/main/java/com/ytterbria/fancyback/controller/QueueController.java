@@ -1,6 +1,7 @@
 package com.ytterbria.fancyback.controller;
 
 import cn.hutool.json.JSONUtil;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,7 +14,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @RestController
 @RequestMapping("/queue")
-public class MessageQueueController {
+@Profile({"dev","local","test"})
+public class QueueController {
     @Resource
     private ThreadPoolExecutor threadPoolExecutor;
 

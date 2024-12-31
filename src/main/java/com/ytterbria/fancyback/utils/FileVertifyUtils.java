@@ -16,7 +16,7 @@ public class FileVertifyUtils {
             return false;
         if (file.getSize() > MAX_FILE_SIZE)
             return false;
-        final List<String> ALLOWED_EXTENSIONS = Arrays.asList("xlsx","xls");
+        final List<String> ALLOWED_EXTENSIONS = Arrays.asList(".xlsx",".xls");
         String suffix = FileUtil.getSuffix(file.getOriginalFilename());
         return ALLOWED_EXTENSIONS.contains(suffix);
     }

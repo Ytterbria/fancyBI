@@ -16,6 +16,8 @@ create table if not exists chart
      chartType   varchar(256) null comment '图表类型',
      genChart    text null comment 'AI生成的图表',
      genResult   text null comment 'AI生成的分析结果',
+     status      varchar(256) null default 'wait' comment 'wait,running,succeed,failed',
+     exeMessage  text null comment '执行信息',
      createTime  datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
      updateTime  datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
      isDelete    tinyint      default 0                 not null comment '是否删除'

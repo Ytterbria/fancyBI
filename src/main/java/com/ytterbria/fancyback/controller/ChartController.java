@@ -31,6 +31,9 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+
 /**
  *  智能图表
  *
@@ -57,7 +60,8 @@ public class ChartController {
     @Resource
     private RedissonLimiterManager redissonLimiterManager;
 
-    // region 增删改查
+    @Resource
+    private ThreadPoolExecutor threadPoolExecutor;
 
     /**
      * 创建
@@ -92,8 +96,8 @@ public class ChartController {
      */
     @Deprecated
     @PostMapping("/generate")
-    public BaseResponse<FancyResponse> generateChartByAI(@RequestPart("file") MultipartFile multipartFile,
-                                                  GenerateChartByAIRequest generateChartByAIRequest, HttpServletRequest request) {
+    public BaseResponse<FancyResponse> generateChartByYupiAI(@RequestPart("file") MultipartFile multipartFile,
+                                                             GenerateChartByAIRequest generateChartByAIRequest, HttpServletRequest request) {
 
         String chartName = generateChartByAIRequest.getChartName();
         String chartType = generateChartByAIRequest.getChartType();
@@ -203,27 +207,49 @@ public class ChartController {
         userInput.append("原始数据: ").append("\n");
         userInput.append(ExcelUtils.ExcelToCsv(multipartFile)).append("\n");
 
-        String result =sparkAIManager.SparkAnswer(prompt,userInput.toString());
-        String [] splits = result.split("------");
-        if (splits.length< 2){
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR,"AI生成错误");
-        }
-        String generatedChart = splits[1];
-        String generatedResult = splits[2];
-        FancyResponse fancyResponse = new FancyResponse();
-        fancyResponse.setGeneratedChart(generatedChart);
-        fancyResponse.setGeneratedResult(generatedResult);
-
+        // 无论任务成功执行与否,消息队列是否满,都可以先将用户提交的信息保存到数据库中,等待后台处理
         Chart chart = new Chart();
         chart.setUserId(loginUser.getId());
         chart.setChartName(chartName);
         chart.setGoal(goal);
         chart.setChartData(ExcelUtils.ExcelToCsv(multipartFile));
         chart.setChartType(chartType);
-        chart.setGenChart(generatedChart);
-        chart.setGenResult(generatedResult);
+        chart.setStatus("wait");
         boolean saveResult = chartService.save(chart);
         ThrowUtils.throwIf(!saveResult,ErrorCode.SYSTEM_ERROR,"图表保存失败");
+
+
+        CompletableFuture.runAsync(() ->{
+            //todo 判断任务状态 | 超时处理 | 失败处理
+
+            // 更新数据库,保存任务状态
+            Chart updateChart = new Chart();
+            updateChart.setId(chart.getId());
+            updateChart.setStatus("running");
+            boolean b = chartService.updateById(updateChart);
+
+            ThrowUtils.throwIf(!b,ErrorCode.SYSTEM_ERROR,"图表状态更改失败");
+
+            // 调用spark AI接口
+            String result =sparkAIManager.SparkAnswer(prompt,userInput.toString());
+            String [] splits = result.split("------");
+
+            ThrowUtils.throwIf(splits.length < 2,ErrorCode.SYSTEM_ERROR,"AI生成错误");
+            // 更新数据库,保存生成的图表和结论
+            String generatedChart = splits[1].trim();
+            String generatedResult = splits[2].trim();
+            Chart updateChartResult = new Chart();
+            updateChartResult.setId(chart.getId());
+            updateChartResult.setGenChart(generatedChart);
+            updateChartResult.setGenResult(generatedResult);
+            updateChartResult.setStatus("success");
+            boolean updateResult = chartService.updateById(updateChartResult);
+            ThrowUtils.throwIf(!updateResult,ErrorCode.SYSTEM_ERROR,"图表状态更改失败");
+        },threadPoolExecutor);
+
+        FancyResponse fancyResponse = new FancyResponse();
+        fancyResponse.setId(chart.getId());
+
         return ResultUtils.success(fancyResponse);
     }
 
