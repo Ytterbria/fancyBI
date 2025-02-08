@@ -1,24 +1,20 @@
 package com.ytterbria.fancyback.annotation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * 权限校验
  *
- * @author <a href="https://github.com/liytterbria">程序员鱼皮</a>
- * @from <a href="https://ytterbria.icu">编程导航知识星球</a>
+ * @author ytterbria
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@Documented //这个注解可以被javadoc工具提取到文档中
 public @interface AuthCheck {
 
     /**
      * 必须有某个角色
      *
-     * @return
      */
     String mustRole() default "";
 
